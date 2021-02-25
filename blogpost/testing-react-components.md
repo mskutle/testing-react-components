@@ -235,4 +235,10 @@ cases(
 );
 ```
 
-Vi importerer `cases` fra `jest-in-case`
+Dette gir også følgende
+
+<img src="./screenshots/test-results.png" />
+
+Vi bruker `cases` for å definere en gruppe med tester. Første parameter er navnet på gruppen. Deretter kommer selve testen, før vi sender inn en liste over de forskjellige input-verdiene vi ønsker å teste for.
+
+Her sjekker vi altså at `onSubmit`-funksjonen ikke blir kalt for noen av tilfellene. Legg merke til hvor enkelt det er å legge inn nye sjekker dersom skjemaet skulle få nye felter en gang i fremtiden - alt du trenger å gjøre er å legge det til i listen.
