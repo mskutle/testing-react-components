@@ -6,7 +6,7 @@ Automatiserte tester hjelper oss å sikre at kodeendringer ikke forårsaker util
 
 Det finnes flere biblioteker som hjelper deg med å teste React-komponenter. De meste kjente er Enzyme og React Testing Library (RTL).
 
-Hvor Enzyme lar deg inspisere state og annen implementasjon av en komponent, er RTL designet for å gjøre det enkelt å teste en komponent uten å måtte forholde seg til hvordan den er implementert. Dette er en god ting! I det øyeblikket testen din begynner å involvere seg i hvordan komponenten er implementert vil du oppleve at refaktorering av den samme komponenten kan få testene til å feile, selv om du ikke har endret på hvordan den fungerer for brukeren.
+Hvor Enzyme lar deg inspisere state og andre implementasjonsdetaljer av en komponent, er RTL designet for å gjøre det enkelt å teste en komponent uten å måtte forholde seg til hvordan den er implementert. Dette er en god ting! I det øyeblikket testen din begynner å involvere seg i hvordan komponenten er implementert vil du oppleve at refaktorering av den samme komponenten kan få testene til å feile, selv om du ikke har endret på hvordan den fungerer for brukeren.
 
 Vi kommer til å bruke React Testing Library i eksempelet senere, og da får du også se at vi kan bytte ut hele implementasjonen uten å måtte gjøre noen endringer i testen!
 
@@ -98,8 +98,8 @@ export default function OrderForm(props) {
 }
 ```
 
-Her tegner vi opp skjemaet ved hjelp av `react-hook-form` (sammen med `yup` for å validere input).
-Dersom man klikker på "Submit"-knappen - og alle påkrevde felter er utfylt - så kaller vi `props.onSubmit` med de utfylte dataene. Det er deretter opp til brukeren av OrderForm å definere hva som skjer med dataene.
+Her tegner vi opp skjemaet ved hjelp av `react-hook-form` (og `yup` for å validere input).
+Dersom man klikker på "Submit"-knappen - og alle påkrevde felter er utfylt - så kaller vi `props.onSubmit` med de utfylte dataene. Det er deretter opp til brukeren av OrderForm å definere hva som skjer videre.
 
 ### Vår første test
 
@@ -157,3 +157,82 @@ describe("OrderForm", () => {
 3. Deretter finner vi alle skjemaelementene basert på elementenes label.
 4. Vi simulerer så en utfylling av alle feltene, før vi klikker på submit-knappen.
 5. Til slutt verifiserer vi at `onSubmit`-funksjonen blir kalt med dataene vi la inn.
+
+### Teste at man ikke får submittet skjemaet med ugyldig input
+
+```jsx
+  test("given invalid email, the form should not be submitted", async () => {
+    const onSubmit = jest.fn();
+    render(<OrderForm onSubmit={onSubmit} />);
+
+    const firstName = screen.getByLabelText(/first name/i);
+    const lastName = screen.getByLabelText(/last name/i);
+    const email = screen.getByLabelText(/email/i);
+    const color = screen.getByLabelText(/color/i);
+    const quantity = screen.getByLabelText(/quantity/i);
+    const submitButton = screen.getByText(/submit/i);
+
+    user.type(firstName, "Bob");
+    user.type(lastName, "Johnson");
+    user.selectOptions(color, "blue");
+    user.type(quantity, "5");
+    user.type(email, "some invalid email");
+
+    user.click(submitButton);
+
+    await waitFor(() => expect(onSubmit).not.toHaveBeenCalled());
+  });
+});
+```
+
+Her sjekker vi at du ikke får sendt inn skjemaet med en ugyldig e-postadresse, selv om alle andre felter skulle være riktig utfylt.
+Vi kunne duplisert denne testen for hver enkelt test case for å sikre at man ikke kan sende inn uten å ha oppgitt fornavn, etternavn, farge etc. - i stedet skal vi bruke <a href="https://github.com/atlassian/jest-in-case">jest-in-case</a> for å generere en rekke testcaser som tester det samme, bare med forskjellig input.
+
+```jsx
+import cases from "jest-in-case";
+
+const validInput = {
+  firstName: "Bob",
+  lastName: "Johnson",
+  email: "bob@johnson.com",
+  color: "red",
+  quantity: "4",
+};
+
+cases(
+  "invalid input will not submit the form",
+  async (opts) => {
+    const onSubmit = jest.fn();
+    render(<OrderForm onSubmit={onSubmit} />);
+
+    const firstName = screen.getByLabelText(/first name/i);
+    const lastName = screen.getByLabelText(/last name/i);
+    const email = screen.getByLabelText(/email/i);
+    const color = screen.getByLabelText(/color/i);
+    const quantity = screen.getByLabelText(/quantity/i);
+    const submitButton = screen.getByText(/submit/i);
+
+    user.type(firstName, opts.firstName);
+    user.type(lastName, opts.lastName);
+    user.type(email, opts.email);
+    user.selectOptions(color, opts.color);
+    user.type(quantity, opts.quantity);
+    user.type(email, "some invalid email");
+
+    user.click(submitButton);
+
+    await waitFor(() => expect(onSubmit).not.toHaveBeenCalled());
+  },
+  [
+    { name: "missing email", ...validInput, email: "" },
+    { name: "invalid email", ...validInput, email: "bob.com" },
+    { name: "missing firstname", ...validInput, firstName: "" },
+    { name: "missing lastname", ...validInput, lastName: "" },
+    { name: "missing color", ...validInput, color: "none" },
+    { name: "missing quantity", ...validInput, quantity: "" },
+    { name: "invalid quantity", ...validInput, quantity: "50" },
+  ]
+);
+```
+
+Vi importerer `cases` fra `jest-in-case`
