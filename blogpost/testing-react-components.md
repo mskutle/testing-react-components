@@ -186,7 +186,7 @@ describe("OrderForm", () => {
 ```
 
 Her sjekker vi at du ikke får sendt inn skjemaet med en ugyldig e-postadresse, selv om alle andre felter skulle være riktig utfylt.
-Vi kunne duplisert denne testen for hver enkelt test case for å sikre at man ikke kan sende inn uten å ha oppgitt fornavn, etternavn, farge etc. - i stedet skal vi bruke <a href="https://github.com/atlassian/jest-in-case">jest-in-case</a> for å generere en rekke testcaser som tester det samme, bare med forskjellig input.
+Vi kunne duplisert denne testen for hver enkelt test case for å sikre at man ikke kan sende inn uten å ha oppgitt fornavn, etternavn, farge etc. - i stedet kan vi bruke <a href="https://github.com/atlassian/jest-in-case">jest-in-case</a> for å generere en rekke testcaser som tester det samme, bare med forskjellig input.
 
 ```jsx
 import cases from "jest-in-case";
