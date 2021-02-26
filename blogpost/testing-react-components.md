@@ -228,7 +228,7 @@ cases(
     { name: "invalid email", ...validInput, email: "bob.com" },
     { name: "missing firstname", ...validInput, firstName: "" },
     { name: "missing lastname", ...validInput, lastName: "" },
-    { name: "missing color", ...validInput, color: "none" },
+    { name: "missing color", ...validInput, color: "" },
     { name: "missing quantity", ...validInput, quantity: "" },
     { name: "invalid quantity", ...validInput, quantity: "50" },
   ]
