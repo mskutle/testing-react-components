@@ -158,7 +158,7 @@ describe("OrderForm", () => {
 4. Vi simulerer så en utfylling av alle feltene, før vi klikker på submit-knappen.
 5. Til slutt verifiserer vi at `onSubmit`-funksjonen blir kalt med dataene vi la inn.
 
-### Teste at man ikke får submittet skjemaet med ugyldig input
+### Hindre innsending ved ugyldig input
 
 ```jsx
   test("given invalid email, the form should not be submitted", async () => {
