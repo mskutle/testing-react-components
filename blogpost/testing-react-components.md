@@ -1,4 +1,4 @@
-# Enhetstesting av React-komponenter
+# Automatisert testing av React-komponenter
 
 Automatiserte tester hjelper oss å sikre at kodeendringer ikke forårsaker utilsiktede endringer andre steder i kodebasen. Dette gjør det lettere å refaktorere, man sparer tid ved å bruke mindre tid på manuell testing og man kan forhindre en rekke bugs. God testdekning er med på å øke kvaliteten på kodebasen.
 
@@ -8,7 +8,7 @@ Det finnes flere biblioteker som hjelper deg med å teste React-komponenter. De 
 
 Hvor Enzyme lar deg inspisere state og andre implementasjonsdetaljer av en komponent, er RTL designet for å gjøre det enkelt å teste en komponent uten å måtte forholde seg til hvordan den er implementert. Dette er en god ting! I det øyeblikket testen din begynner å involvere seg i hvordan komponenten er implementert vil du oppleve at refaktorering av den samme komponenten kan få testene til å feile, selv om du ikke har endret på hvordan den fungerer for brukeren.
 
-Vi kommer til å bruke React Testing Library i eksempelet senere, og da får du også se at vi kan bytte ut hele implementasjonen uten å måtte gjøre noen endringer i testen!
+Vi kommer til å bruke React Testing Library her, og da får du også se at vi kan bytte ut hele implementasjonen uten å måtte gjøre noen endringer i testen!
 
 La oss se på et eksempel.
 
@@ -235,10 +235,164 @@ cases(
 );
 ```
 
-Dette gir også følgende
+Vi bruker `cases` for å definere en gruppe med tester. Første parameter er navnet på gruppen. Deretter kommer selve testen, før vi sender inn en liste over de forskjellige input-verdiene vi ønsker å teste for.
+
+Her sjekker vi altså at `onSubmit`-funksjonen ikke blir kalt for noen av tilfellene. Legg merke til hvor enkelt det er å legge inn nye sjekker dersom skjemaet skulle få nye felter en gang i fremtiden - alt du trenger å gjøre er å legge dem til i listen.
 
 <img src="./screenshots/test-results.png" />
 
-Vi bruker `cases` for å definere en gruppe med tester. Første parameter er navnet på gruppen. Deretter kommer selve testen, før vi sender inn en liste over de forskjellige input-verdiene vi ønsker å teste for.
+## Refaktorering
 
-Her sjekker vi altså at `onSubmit`-funksjonen ikke blir kalt for noen av tilfellene. Legg merke til hvor enkelt det er å legge inn nye sjekker dersom skjemaet skulle få nye felter en gang i fremtiden - alt du trenger å gjøre er å legge det til i listen.
+Ettersom vi kun tester det brukeren ser, og ikke bryr oss om hvordan komponenten er implementert, kan vi bytte ut hele implementasjonen av `OrderForm.js` _uten_ å måtte gjøre noen endringer i testen. Dette gir testen mye høyere verdi enn hvis vi f.eks hadde begynt å inspisere komponentens interne `state` for å validere funksjonaliteten. Testen vår bryr seg ikke om OrderForm benytter `react-hook-form`, `useState`, `useReducer` eller `Redux` til å håndtere tilstanden, og det betyr også at vi kan endre `OrderForm` uten at testen feiler. Den feiler kun dersom _funksjonaliteten_ ikke lenger er den samme.
+
+La oss, i stedet for å bruke React Hook Form, implementere skjemaet selv.
+
+```jsx
+import { useState } from "react";
+import { Input, Select, Option, Button } from "./FormInputs";
+
+function isValidEmail(email) {
+  const regex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return regex.test(String(email).toLowerCase());
+}
+
+export default function OrderForm(props) {
+  const [state, setState] = useState({
+    firstName: { value: "", valid: false },
+    lastName: { value: "", valid: false },
+    email: { value: "", valid: false },
+    color: { value: "red", valid: true },
+    quantity: { value: "", valid: false },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formIsValid = Object.values(state).every((field) => field.valid);
+
+    if (formIsValid) {
+      const data = {
+        firstName: state.firstName.value,
+        lastName: state.lastName.value,
+        email: state.email.value,
+        color: state.color.value,
+        quantity: parseInt(state.quantity.value),
+      };
+      props.onSubmit(data);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    const isEmpty = value === "" || value === undefined;
+
+    let isValid = true;
+
+    if (isEmpty) {
+      isValid = false;
+    }
+
+    if (name === "email" && !isValidEmail(value)) {
+      isValid = false;
+    }
+
+    if (name === "quantity" && parseInt(value) > 5) {
+      isValid = false;
+    }
+
+    setState({
+      ...state,
+      [name]: {
+        ...state[name],
+        value,
+        valid: isValid,
+      },
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col space-y-10">
+      <div className="space-y-2">
+        <div className="flex space-x-4">
+          <label htmlFor="firstName" className="flex flex-col">
+            First name
+            <Input
+              type="text"
+              id="firstName"
+              name="firstName"
+              onChange={handleInputChange}
+              value={state.firstName.value}
+            />
+          </label>
+          <label htmlFor="lastName" className="flex flex-col">
+            Last name
+            <Input
+              type="text"
+              id="lastName"
+              name="lastName"
+              onChange={handleInputChange}
+              value={state.lastName.value}
+            />
+          </label>
+        </div>
+        <label htmlFor="email" className="flex flex-col">
+          Email
+          <Input
+            type="text"
+            id="email"
+            name="email"
+            onChange={handleInputChange}
+            value={state.email.value}
+          />
+        </label>
+      </div>
+      <div className="space-y-2">
+        <div className="flex space-x-4">
+          <label htmlFor="color" className="flex flex-col">
+            Color
+            <Select
+              name="color"
+              id="color"
+              onChange={handleInputChange}
+              value={state.color.value}
+            >
+              <Option value="">Select...</Option>
+              <Option value="red">Red</Option>
+              <Option value="blue">Blue</Option>
+              <Option value="green">Green</Option>
+            </Select>
+          </label>
+          <label htmlFor="quantity" className="flex flex-col">
+            Quantity
+            <Input
+              type="number"
+              value={state.quantity.value}
+              name="quantity"
+              id="quantity"
+              min="1"
+              max="5"
+              onChange={handleInputChange}
+            />
+          </label>
+        </div>
+        <div className="my-6">
+          <Button type="submit">Submit</Button>
+        </div>
+      </div>
+    </form>
+  );
+}
+```
+
+Når vi kjører testene igjen så ser vi at alt fortsatt fungerer! På denne måten blir testene våre en slags sjekkliste for når den nye komponenten har implementert samme funksjonalitet som den gamle. Vi vet at vi har replikert funksjonaliteten når alt lyser grønt :)
+
+<img src="./screenshots/test-results.png" />
+
+## Oppsummering
+
+React Testing Library hjelper oss å skrive tester på en måte som simulerer hvordan en bruker samhandler med komponentene. Dette lar oss
+
+a) sikre at komponentene virker slik som de er tiltenkt
+
+b) endre komponenters implementasjon og samtidig være trygg på at de fungerer som før, så lenge testene lyser grønt.
+
+c) spare tid ved, i dette tilfellet for eksempel, å slippe å manuelt fylle ut et skjema for å verifisere at det fungerer.

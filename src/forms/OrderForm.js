@@ -44,7 +44,7 @@ export default function OrderForm(props) {
           <label htmlFor="color" className="flex flex-col">
             Color
             <Select ref={register} name="color" id="color">
-              <Option value="none">Select...</Option>
+              <Option value="">Select...</Option>
               <Option value="red">Red</Option>
               <Option value="blue">Blue</Option>
               <Option value="green">Green</Option>

@@ -1,7 +1,7 @@
 import { screen, render, waitFor } from "@testing-library/react";
 import user from "@testing-library/user-event";
 import cases from "jest-in-case";
-import OrderForm from "./OrderForm";
+import OrderForm from "./BasicOrderForm";
 
 describe("OrderForm", () => {
   test("given valid input, it submits the form with the input", async () => {
@@ -72,7 +72,7 @@ cases(
     { name: "invalid email", ...validInput, email: "bob.com" },
     { name: "missing firstname", ...validInput, firstName: "" },
     { name: "missing lastname", ...validInput, lastName: "" },
-    { name: "missing color", ...validInput, color: "none" },
+    { name: "missing color", ...validInput, color: "" },
     { name: "missing quantity", ...validInput, quantity: "" },
     { name: "invalid quantity", ...validInput, quantity: "50" },
   ]
